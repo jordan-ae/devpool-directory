@@ -412,7 +412,7 @@ async function isAuthorizedCreator() {
 
 // Function to delete unauthorized issues
 export async function deleteUnauthorizedIssues(): Promise<boolean> {
-  const issuesJson = execCommand(`gh issue list --repo ${DEVPOOL_REPO_NAME} --limit 1000 --json number,author,title,author_association`);
+  const issuesJson = execCommand(`gh issue list --repo ${DEVPOOL_OWNER_NAME}/${DEVPOOL_REPO_NAME} --limit 1000 --json number,author,title,author_association`);
   const authorizedOrgIds = [76412717, 133917611, 165700353];
 
   if (!issuesJson) {
