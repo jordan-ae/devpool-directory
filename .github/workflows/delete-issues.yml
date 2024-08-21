@@ -1,4 +1,4 @@
-name: Delete Unauthorized Issues
+name: Close Unauthorized Issues
 
 on:
   push:
@@ -7,7 +7,7 @@ on:
   workflow_dispatch:
 
 jobs:
-  delete-unauthorized-issues:
+  close-unauthorized-issues:
     runs-on: ubuntu-latest
 
     steps:
@@ -20,16 +20,16 @@ jobs:
           node-version: '20.10.0' # Ensure this matches your project's Node.js version
 
       - name: Install jq (required by the script)
-        run: sudo apt-get install jq
+        run: sudo apt-get install -y jq
 
-      - name: Delete Unauthorized Issues
+      - name: Close Unauthorized Issues
         run: |
           REPO="jordan-ae/devpool-directory"
           AUTHORIZED_ORG_IDS=(76412717 133917611 165700353)
           
-          # Fetch issues
-          issues=$(gh issue list --repo "$REPO" --limit 1000 --json number,author,title)
-          
+          # Fetch issues with author login and author association (organization info might be absent)
+          issues=$(gh issue list --repo "$REPO" --limit 100 --json number,author,authorAssociation,title)
+
           # Check if issues JSON is valid
           if [[ -z "$issues" || "$issues" == "[]" ]]; then
             echo "No issues found or invalid JSON."
@@ -39,12 +39,13 @@ jobs:
           # Process each issue
           echo "$issues" | jq -c '.[]' | while read -r issue; do
             issue_number=$(echo "$issue" | jq -r '.number')
-            issue_author_id=$(echo "$issue" | jq -r '.author.id')
+            issue_author_login=$(echo "$issue" | jq -r '.author.login')
             issue_title=$(echo "$issue" | jq -r '.title')
+            author_association=$(echo "$issue" | jq -r '.authorAssociation')
       
-            if [[ ! " ${AUTHORIZED_ORG_IDS[@]} " =~ " ${issue_author_id} " ]]; then
-              echo "Deleting unauthorized issue: #$issue_number $issue_title (by $issue_author_id)..."
-              gh issue delete "$issue_number" --repo "$REPO" --yes
+            if [[ ! " ${AUTHORIZED_ORG_IDS[@]} " =~ " ${issue_author_login} " && "$author_association" != "OWNER" ]]; then
+              echo "Closing unauthorized issue: #$issue_number $issue_title (by $issue_author_login)..."
+              gh issue close "$issue_number" --repo "$REPO"
             fi
           done
       
