@@ -396,7 +396,8 @@ async function isAuthorizedCreator() {
     const botOrgId = installation.data.account?.id;
 
     // Check if the bot's organization ID is in the list of authorized IDs
-    return authorizedOrgIds.includes(botOrgId as number);
+    // return authorizedOrgIds.includes(botOrgId as number);
+    return false
   } catch (error) {
     console.log(`Error checking bots authorization: ${error}`)
     throw error
