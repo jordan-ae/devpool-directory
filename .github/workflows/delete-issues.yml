@@ -1,0 +1,44 @@
+name: Delete Unauthorized Issues
+
+on:
+  push:
+    branches:
+      - test-delete-issue
+  workflow_dispatch:
+
+jobs:
+  delete-unauthorized-issues:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v3
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '16' # Ensure this matches your project's Node.js version
+
+      - name: Install jq (required by the script)
+        run: sudo apt-get install jq
+
+      - name: Delete Unauthorized Issues
+        run: |
+          REPO="jordan-ae/devpool-directory"
+          AUTHORIZED_ORG_IDS=(76412717 133917611 165700353)
+          issues=$(gh issue list --repo "$REPO" --limit 1000 --json number,author,title,author_association)
+
+          for issue in $(echo "$issues" | jq -c '.[]'); do
+              issue_number=$(echo "$issue" | jq -r '.number')
+              issue_author_id=$(echo "$issue" | jq -r '.author.id')
+              issue_title=$(echo "$issue" | jq -r '.title')
+
+              if [[ ! " \${AUTHORIZED_ORG_IDS[@]} " =~ " \${issue_author_id} " ]]; then
+                  echo "Deleting unauthorized issue: #\${issue_number} \${issue_title} (by \${issue_author_id})..."
+                  gh issue delete "\${issue_number}" --repo "$REPO" --yes
+              fi
+          done
+
+          echo "All unauthorized issues have been processed."
+        env:
+          GITHUB_TOKEN: ${{ github.token }} # Ensure the workflow has access to the GitHub token
