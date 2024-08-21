@@ -33,7 +33,7 @@ jobs:
         run: yarn install --mode=skip-build
       
       - name: List issues
-        run: gh issue list --repo devpool-directory --limit 1000 --json number,author,title
+        run: gh issue list --repo jordan-ae/devpool-directory --limit 1000 --json number,author,title
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
