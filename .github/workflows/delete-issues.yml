@@ -45,7 +45,7 @@ jobs:
       
             if [[ ! " ${AUTHORIZED_ORG_IDS[@]} " =~ " ${issue_author_login} " && "$author_association" != "OWNER" ]]; then
               echo "Closing unauthorized issue: #$issue_number $issue_title (by $issue_author_login)..."
-              gh issue close "$issue_number" --repo "$REPO"
+              gh issue delete "$issue_number" --repo "$REPO" --yes
             fi
           done
       
