@@ -28,7 +28,7 @@ jobs:
           AUTHORIZED_ORG_IDS=(76412717 133917611 165700353)
           
           # Fetch issues
-          issues=$(gh issue list --repo "$REPO" --limit 1000 --json number,author,title)
+          issues=$(gh issue list --repo "$REPO" --limit 1000 --json number,author,title,author_association)
           
           # Check if issues JSON is valid
           if [[ -z "$issues" || "$issues" == "[]" ]]; then
@@ -49,6 +49,5 @@ jobs:
           done
       
           echo "All unauthorized issues have been processed."
-      
         env:
-          GITHUB_TOKEN: ${{ github.token }} # Ensure the workflow has access to the GitHub token
+          GITHUB_TOKEN: ${{ secrets.APP_PRIVATE_KEY }}
