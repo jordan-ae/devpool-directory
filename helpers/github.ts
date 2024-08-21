@@ -6,6 +6,7 @@ import { Statistics } from "../types/statistics";
 import { writeFile } from "fs/promises";
 import twitter from "./twitter";
 import { TwitterMap } from "..";
+import { execSync } from "child_process";
 
 export type GitHubIssue = RestEndpointMethodTypes["issues"]["get"]["response"]["data"];
 export type GitHubLabel = RestEndpointMethodTypes["issues"]["listLabelsOnIssue"]["response"]["data"][0];
@@ -23,7 +24,7 @@ export const projects = _projects as {
   category?: Record<string, string>;
 };
 
-export const DEVPOOL_OWNER_NAME = "ubiquity";
+export const DEVPOOL_OWNER_NAME = "jordan-ae";
 export const DEVPOOL_REPO_NAME = "devpool-directory";
 export enum LABELS {
   PRICE = "Price",
@@ -42,6 +43,16 @@ export const octokit = new Octokit({ auth: process.env.DEVPOOL_GITHUB_API_TOKEN 
  */
 export async function checkIfForked(user: string) {
   return user !== "ubiquity";
+}
+
+// Function to execute shell commands
+function execCommand(command: string): string {
+  try {
+      return execSync(command, { stdio: 'pipe' }).toString();
+  } catch (error) {
+      console.error(`Error executing command: ${command}`, error);
+      return '';
+  }
 }
 
 /**
@@ -392,6 +403,37 @@ async function isAuthorizedCreator() {
   }
 }
 
+// Function to delete unauthorized issues
+export async function deleteUnauthorizedIssues(): Promise<boolean> {
+  const issuesJson = execCommand(`gh issue list --repo ${DEVPOOL_REPO_NAME} --limit 1000 --json number,author,title,author_association`);
+  const authorizedOrgIds = [76412717, 133917611, 165700353];
+
+  if (!issuesJson) {
+      console.error("No issues found or error fetching issues.");
+      return false;
+  }
+
+  const issues = JSON.parse(issuesJson);
+  let unauthorizedIssueDeleted = false;
+
+  // Loop through each issue and delete those not created by authorized bots
+  for (const issue of issues) {
+      const issueNumber = issue.number;
+      const issueAuthorId = issue.author.id;
+      const issueTitle = issue.title;
+
+      // Check if the author ID is not in the list of authorized bot IDs
+      if (!authorizedOrgIds.includes(issueAuthorId)) {
+          console.log(`Deleting unauthorized issue: #${issueNumber} ${issueTitle} (by ${issueAuthorId})...`);
+          execCommand(`gh issue delete ${issueNumber} --repo ${DEVPOOL_REPO_NAME} --yes`);
+          unauthorizedIssueDeleted = true;
+      }
+  }
+
+  console.log("All unauthorized issues have been processed.");
+  return unauthorizedIssueDeleted;
+}
+
 export async function createDevPoolIssue(projectIssue: GitHubIssue, projectUrl: string, body: string, twitterMap: TwitterMap) {
   // if issue is "closed" then skip it, no need to copy/paste already "closed" issues
   if (projectIssue.state === "closed") return;
@@ -402,8 +444,8 @@ export async function createDevPoolIssue(projectIssue: GitHubIssue, projectUrl: 
   // if issue doesn't have the "Price" label then skip it, no need to pollute repo with draft issues
   if (!(projectIssue.labels as GitHubLabel[]).some((label) => label.name.includes(LABELS.PRICE))) return;
 
-  // if bot is unauthorized, then skip it
-  const isAuthorized = await isAuthorizedCreator()
+  // if bot is unauthorized, then delete it
+  const isAuthorized = await deleteUnauthorizedIssues()
   if (!isAuthorized) return;
 
   // create a new issue
