@@ -388,13 +388,15 @@ async function isAuthorizedCreator() {
   const authorizedOrgIds = [76412717, 133917611, 165700353];
 
   try {
-    const installation = await octokit.rest.apps.getRepoInstallation({
-      owner: DEVPOOL_OWNER_NAME,
-      repo: DEVPOOL_REPO_NAME,
-    });
+  //   const installation = await octokit.rest.apps.getRepoInstallation({
+  //     owner: DEVPOOL_OWNER_NAME,
+  //     repo: DEVPOOL_REPO_NAME,
+  //   });
   
-    const botOrgId = installation.data.account?.id;
-    return authorizedOrgIds.includes(botOrgId as number);
+  //   const botOrgId = installation.data.account?.id;
+  //   return authorizedOrgIds.includes(botOrgId as number);
+
+  return false
   
   } catch (error) {
     if (error.status === 401) {
