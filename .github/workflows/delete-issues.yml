@@ -50,4 +50,4 @@ jobs:
       
           echo "All unauthorized issues have been processed."
         env:
-          GITHUB_TOKEN: ${{ secrets.APP_PRIVATE_KEY }}
+          GITHUB_TOKEN: ${{ github.token }}
