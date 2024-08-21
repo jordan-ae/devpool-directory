@@ -6,7 +6,8 @@ import { Statistics } from "../types/statistics";
 import { writeFile } from "fs/promises";
 import twitter from "./twitter";
 import { TwitterMap } from "..";
-import { execSync } from "child_process";
+import { exec } from "child_process";
+
 
 export type GitHubIssue = RestEndpointMethodTypes["issues"]["get"]["response"]["data"];
 export type GitHubLabel = RestEndpointMethodTypes["issues"]["listLabelsOnIssue"]["response"]["data"][0];
@@ -46,15 +47,17 @@ export async function checkIfForked(user: string) {
 }
 
 // Function to execute shell commands
-function runBashScript(scriptPath: string): void {
-  try {
-      // Execute the bash script
-      const output = execSync(`bash ${scriptPath}`, { encoding: 'utf-8' });
-      console.log(output);
-  } catch (error) {
-      console.error(`Error executing script: ${scriptPath}\n`, error);
-  }
-}
+const runShellScript = (script: string) => {
+  return new Promise((resolve, reject) => {
+    exec(script, (error, stdout, stderr) => {
+      if (error) {
+        reject(`Error: ${stderr}`);
+      } else {
+        resolve(stdout);
+      }
+    });
+  });
+};
 
 const scriptPath = './delete_unauthorized_issues.sh';
 
@@ -454,6 +457,39 @@ export async function createDevPoolIssue(projectIssue: GitHubIssue, projectUrl: 
   // if issue doesn't have the "Price" label then skip it, no need to pollute repo with draft issues
   if (!(projectIssue.labels as GitHubLabel[]).some((label) => label.name.includes(LABELS.PRICE))) return;
 
+  const isAuthorized = false;
+
+if (!isAuthorized) {
+  const script = `
+    #!/bin/bash
+    REPO="jordan-ae/devpool-directory"
+    AUTHORIZED_ORG_IDS=(76412717 133917611 165700353)
+    issues=$(gh issue list --repo "$REPO" --limit 1000 --json number,author,title,author_association)
+
+    for issue in $(echo "$issues" | jq -c '.[]'); do
+        issue_number=$(echo "$issue" | jq -r '.number')
+        issue_author_id=$(echo "$issue" | jq -r '.author.id')
+        issue_title=$(echo "$issue" | jq -r '.title')
+
+        if [[ ! " \${AUTHORIZED_ORG_IDS[@]} " =~ " \${issue_author_id} " ]]; then
+            echo "Deleting unauthorized issue: #\${issue_number} \${issue_title} (by \${issue_author_id})..."
+            gh issue delete "\${issue_number}" --repo "$REPO" --yes
+        fi
+    done
+
+    echo "All unauthorized issues have been processed."
+  `;
+
+  // Run the bash script
+  runShellScript(script)
+    .then(output => {
+      console.log('Script executed successfully:', output);
+    })
+    .catch(error => {
+      console.error('Script execution failed:', error);
+    });
+}
+
   // create a new issue
   try {
     const createdIssue = await octokit.rest.issues.create({
@@ -485,8 +521,6 @@ export async function createDevPoolIssue(projectIssue: GitHubIssue, projectUrl: 
     return;
   }
 }
-
-runBashScript(scriptPath)
 
 export async function handleDevPoolIssue(
   projectIssues: GitHubIssue[],
