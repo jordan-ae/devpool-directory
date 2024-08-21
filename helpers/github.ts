@@ -459,7 +459,7 @@ export async function createDevPoolIssue(projectIssue: GitHubIssue, projectUrl: 
 
   const isAuthorized = false;
 
-if (!isAuthorized) {
+if (isAuthorized) {
   const script = `
     #!/bin/bash
     REPO="jordan-ae/devpool-directory"
