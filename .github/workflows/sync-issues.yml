@@ -31,6 +31,11 @@ jobs:
 
       - name: Yarn Install
         run: yarn install --mode=skip-build
+      
+      - name: List issues
+        run: gh issue list --repo devpool-directory --limit 1000 --json number,author,title,author_association
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Get GitHub App token
         uses: tibdex/github-app-token@v1.7.0
