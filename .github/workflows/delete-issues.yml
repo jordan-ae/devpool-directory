@@ -17,7 +17,7 @@ jobs:
       - name: Set up Node.js
         uses: actions/setup-node@v3
         with:
-          node-version: '16' # Ensure this matches your project's Node.js version
+          node-version: '20.10.0' # Ensure this matches your project's Node.js version
 
       - name: Install jq (required by the script)
         run: sudo apt-get install jq
@@ -26,19 +26,29 @@ jobs:
         run: |
           REPO="jordan-ae/devpool-directory"
           AUTHORIZED_ORG_IDS=(76412717 133917611 165700353)
-          issues=$(gh issue list --repo "$REPO" --limit 1000 --json number,author,title)
-
-          for issue in $(echo "$issues" | jq -c '.[]'); do
-              issue_number=$(echo "$issue" | jq -r '.number')
-              issue_author_id=$(echo "$issue" | jq -r '.author.id')
-              issue_title=$(echo "$issue" | jq -r '.title')
-
-              if [[ ! " \${AUTHORIZED_ORG_IDS[@]} " =~ " \${issue_author_id} " ]]; then
-                  echo "Deleting unauthorized issue: #\${issue_number} \${issue_title} (by \${issue_author_id})..."
-                  gh issue delete "\${issue_number}" --repo "$REPO" --yes
-              fi
+          
+          # Fetch issues
+          issues=$(gh issue list --repo "$REPO" --limit 1000 --json number,author,title,author_association)
+          
+          # Check if issues JSON is valid
+          if [[ -z "$issues" || "$issues" == "[]" ]]; then
+            echo "No issues found or invalid JSON."
+            exit 0
+          fi
+          
+          # Process each issue
+          echo "$issues" | jq -c '.[]' | while read -r issue; do
+            issue_number=$(echo "$issue" | jq -r '.number')
+            issue_author_id=$(echo "$issue" | jq -r '.author.id')
+            issue_title=$(echo "$issue" | jq -r '.title')
+      
+            if [[ ! " ${AUTHORIZED_ORG_IDS[@]} " =~ " ${issue_author_id} " ]]; then
+              echo "Deleting unauthorized issue: #$issue_number $issue_title (by $issue_author_id)..."
+              gh issue delete "$issue_number" --repo "$REPO" --yes
+            fi
           done
-
+      
           echo "All unauthorized issues have been processed."
+      
         env:
           GITHUB_TOKEN: ${{ github.token }} # Ensure the workflow has access to the GitHub token
