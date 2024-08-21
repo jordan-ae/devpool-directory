@@ -390,17 +390,21 @@ async function isAuthorizedCreator() {
   try {
     const installation = await octokit.rest.apps.getRepoInstallation({
       owner: DEVPOOL_OWNER_NAME,
-      repo: DEVPOOL_REPO_NAME
+      repo: DEVPOOL_REPO_NAME,
     });
-
+  
     const botOrgId = installation.data.account?.id;
-
-    // Check if the bot's organization ID is in the list of authorized IDs
-    // return authorizedOrgIds.includes(botOrgId as number);
-    return false
+    return authorizedOrgIds.includes(botOrgId as number);
+  
   } catch (error) {
-    console.log(`Error checking bots authorization: ${error}`)
-    throw error
+    if (error.status === 401) {
+      console.error("Authentication failed: Invalid or expired JSON Web Token.");
+    } else if (error.status === 404) {
+      console.error(`Installation not found for repository `);
+    } else {
+      console.error("Error checking bot authorization:", error);
+    }
+    return false;
   }
 }
 
