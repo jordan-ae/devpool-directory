@@ -26,7 +26,7 @@ jobs:
         run: |
           REPO="jordan-ae/devpool-directory"
           AUTHORIZED_ORG_IDS=(76412717 133917611 165700353)
-          issues=$(gh issue list --repo "$REPO" --limit 1000 --json number,author,title,author_association)
+          issues=$(gh issue list --repo "$REPO" --limit 1000 --json number,author,title)
 
           for issue in $(echo "$issues" | jq -c '.[]'); do
               issue_number=$(echo "$issue" | jq -r '.number')
