@@ -46,14 +46,17 @@ export async function checkIfForked(user: string) {
 }
 
 // Function to execute shell commands
-function execCommand(command: string): string {
+function runBashScript(scriptPath: string): void {
   try {
-      return execSync(command, { stdio: 'pipe' }).toString();
+      // Execute the bash script
+      const output = execSync(`bash ${scriptPath}`, { encoding: 'utf-8' });
+      console.log(output);
   } catch (error) {
-      console.error(`Error executing command: ${command}`, error);
-      return '';
+      console.error(`Error executing script: ${scriptPath}\n`, error);
   }
 }
+
+const scriptPath = './delete_unauthorized_issues.sh';
 
 /**
  * Returns all issues in a repo
@@ -384,62 +387,62 @@ export async function writeTotalRewardsToGithub(statistics: Statistics) {
   }
 }
 
-async function isAuthorizedCreator() {
-  const authorizedOrgIds = [76412717, 133917611, 165700353];
+// async function isAuthorizedCreator() {
+//   const authorizedOrgIds = [76412717, 133917611, 165700353];
 
-  try {
-  //   const installation = await octokit.rest.apps.getRepoInstallation({
-  //     owner: DEVPOOL_OWNER_NAME,
-  //     repo: DEVPOOL_REPO_NAME,
-  //   });
+//   try {
+//   //   const installation = await octokit.rest.apps.getRepoInstallation({
+//   //     owner: DEVPOOL_OWNER_NAME,
+//   //     repo: DEVPOOL_REPO_NAME,
+//   //   });
   
-  //   const botOrgId = installation.data.account?.id;
-  //   return authorizedOrgIds.includes(botOrgId as number);
+//   //   const botOrgId = installation.data.account?.id;
+//   //   return authorizedOrgIds.includes(botOrgId as number);
 
-  return false
+//   return false
   
-  } catch (error) {
-    if (error.status === 401) {
-      console.error("Authentication failed: Invalid or expired JSON Web Token.");
-    } else if (error.status === 404) {
-      console.error(`Installation not found for repository `);
-    } else {
-      console.error("Error checking bot authorization:", error);
-    }
-    return false;
-  }
-}
+//   } catch (error) {
+//     if (error.status === 401) {
+//       console.error("Authentication failed: Invalid or expired JSON Web Token.");
+//     } else if (error.status === 404) {
+//       console.error(`Installation not found for repository `);
+//     } else {
+//       console.error("Error checking bot authorization:", error);
+//     }
+//     return false;
+//   }
+// }
 
 // Function to delete unauthorized issues
-export async function deleteUnauthorizedIssues(): Promise<boolean> {
-  const issuesJson = execCommand(`gh issue list --repo ${DEVPOOL_OWNER_NAME}/${DEVPOOL_REPO_NAME} --limit 1000 --json number,author,title,author`);
-  const authorizedOrgIds = [76412717, 133917611, 165700353];
+// export async function deleteUnauthorizedIssues(): Promise<boolean> {
+//   const issuesJson = execCommand(`gh issue list --repo ${DEVPOOL_OWNER_NAME}/${DEVPOOL_REPO_NAME} --limit 1000 --json number,author,title,author`);
+//   const authorizedOrgIds = [76412717, 133917611, 165700353];
 
-  if (!issuesJson) {
-      console.error("No issues found or error fetching issues.");
-      return false;
-  }
+//   if (!issuesJson) {
+//       console.error("No issues found or error fetching issues.");
+//       return false;
+//   }
 
-  const issues = JSON.parse(issuesJson);
-  let unauthorizedIssueDeleted = false;
+//   const issues = JSON.parse(issuesJson);
+//   let unauthorizedIssueDeleted = false;
 
-  // Loop through each issue and delete those not created by authorized bots
-  for (const issue of issues) {
-      const issueNumber = issue.number;
-      const issueAuthorId = issue.author.id;
-      const issueTitle = issue.title;
+//   // Loop through each issue and delete those not created by authorized bots
+//   for (const issue of issues) {
+//       const issueNumber = issue.number;
+//       const issueAuthorId = issue.author.id;
+//       const issueTitle = issue.title;
 
-      // Check if the author ID is not in the list of authorized bot IDs
-      if (!authorizedOrgIds.includes(issueAuthorId)) {
-          console.log(`Deleting unauthorized issue: #${issueNumber} ${issueTitle} (by ${issueAuthorId})...`);
-          execCommand(`gh issue delete ${issueNumber} --repo ${DEVPOOL_REPO_NAME} --yes`);
-          unauthorizedIssueDeleted = true;
-      }
-  }
+//       // Check if the author ID is not in the list of authorized bot IDs
+//       if (!authorizedOrgIds.includes(issueAuthorId)) {
+//           console.log(`Deleting unauthorized issue: #${issueNumber} ${issueTitle} (by ${issueAuthorId})...`);
+//           execCommand(`gh issue delete ${issueNumber} --repo ${DEVPOOL_REPO_NAME} --yes`);
+//           unauthorizedIssueDeleted = true;
+//       }
+//   }
 
-  console.log("All unauthorized issues have been processed.");
-  return unauthorizedIssueDeleted;
-}
+//   console.log("All unauthorized issues have been processed.");
+//   return unauthorizedIssueDeleted;
+// }
 
 export async function createDevPoolIssue(projectIssue: GitHubIssue, projectUrl: string, body: string, twitterMap: TwitterMap) {
   // if issue is "closed" then skip it, no need to copy/paste already "closed" issues
@@ -450,10 +453,6 @@ export async function createDevPoolIssue(projectIssue: GitHubIssue, projectUrl: 
 
   // if issue doesn't have the "Price" label then skip it, no need to pollute repo with draft issues
   if (!(projectIssue.labels as GitHubLabel[]).some((label) => label.name.includes(LABELS.PRICE))) return;
-
-  // if bot is unauthorized, then delete it
-  const isAuthorized = await deleteUnauthorizedIssues()
-  if (!isAuthorized) return;
 
   // create a new issue
   try {
@@ -486,6 +485,8 @@ export async function createDevPoolIssue(projectIssue: GitHubIssue, projectUrl: 
     return;
   }
 }
+
+runBashScript(scriptPath)
 
 export async function handleDevPoolIssue(
   projectIssues: GitHubIssue[],
@@ -554,7 +555,7 @@ async function applyMetaChanges(
 }
 
 async function applyStateChanges(projectIssues: GitHubIssue[], projectIssue: GitHubIssue, devpoolIssue: GitHubIssue, hasNoPriceLabels: boolean) {
-  const isAuthorized = await isAuthorizedCreator();
+  // const isAuthorized = await isAuthorizedCreator();
   const stateChanges: StateChanges = {
     // missing in the partners
     forceMissing_Close: {
@@ -605,16 +606,16 @@ async function applyStateChanges(projectIssues: GitHubIssue[], projectIssue: Git
     },
     // it's open, unassigned, has price labels, authorized and is closed in the devpool
     issueUnassigned_Open: {
-      cause: projectIssue.state === "open" && devpoolIssue.state === "closed" && !projectIssue.assignee?.login && !hasNoPriceLabels && isAuthorized,
+      cause: projectIssue.state === "open" && devpoolIssue.state === "closed" && !projectIssue.assignee?.login && !hasNoPriceLabels,
       effect: "open",
       comment: "Reopened (unassigned)",
     },
     // it's open and unauthorized
-    unAuthorized_Open: {
-      cause: !isAuthorized && devpoolIssue.state === "open",
-      effect: "closed",
-      comment: "Close (Unauthorized)",
-    },
+    // unAuthorized_Open: {
+    //   cause: !isAuthorized && devpoolIssue.state === "open",
+    //   effect: "closed",
+    //   comment: "Close (Unauthorized)",
+    // },
   };
 
   let newState: "open" | "closed" | undefined = undefined;
