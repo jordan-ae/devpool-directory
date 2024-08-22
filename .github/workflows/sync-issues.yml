@@ -23,6 +23,9 @@ jobs:
         uses: actions/setup-node@v3
         with:
           node-version: "20.10.0"
+      
+      - name: Install jq
+        run: sudo apt-get install -y jq    
 
       - name: Download Artifact
         env:
@@ -47,6 +50,11 @@ jobs:
           TWITTER_ACCESS_TOKEN: ${{ secrets.TWITTER_ACCESS_TOKEN }}
           TWITTER_ACCESS_TOKEN_SECRET: ${{ secrets.TWITTER_ACCESS_TOKEN_SECRET }}
         run: npx tsx index.ts
+      
+      - name: Delete Unauthorized Issues
+        run: bash ./delete_unauthorized_issues.sh
+        env:
+          GH_TOKEN: ${{ secrets.PAT }}
 
       - uses: actions/upload-artifact@v4
         with:
