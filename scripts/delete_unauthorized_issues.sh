@@ -15,13 +15,10 @@ fi
 # Process each issue
 echo "$issues" | jq -c '.[]' | while read -r issue; do
     issue_number=$(echo "$issue" | jq -r '.number')
-    issue_author_login=$(echo "$issue" | jq -r '.id')
+    issue_author=$(echo "$issue" | jq -r '.author')
     issue_title=$(echo "$issue" | jq -r '.title')
 
-    if [[ ! " ${AUTHORIZED_ORG_IDS[@]} " =~ " ${issue_author_login} " ]]; then
-        echo "Deleting unauthorized issue: #$issue_number $issue_title (by $issue_author_login)..."
-        gh issue delete "$issue_number" --repo "$REPO" --yes
-    fi
+    echo "Issue #$issue_number: $issue_title"
+    echo "Author details: $issue_author"
+    echo "-------------------------------"
 done
-
-echo "All unauthorized issues have been deleted."
