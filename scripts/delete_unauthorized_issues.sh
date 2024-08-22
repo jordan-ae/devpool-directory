@@ -1,7 +1,7 @@
 #!/bin/bash
 
 REPO="jordan-ae/devpool-directory"
-AUTHORIZED_ORG_IDS=("app/jordan-ubiquibot-test")
+AUTHORIZED_ORG_IDS=("app/jordan-ubiquibot-testsss")
 
 # Fetch issues with author login and author association (organization info might be absent)
 issues=$(gh issue list --repo "$REPO" --limit 100 --json number,author,title,id)
