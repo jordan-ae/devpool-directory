@@ -4,7 +4,7 @@ REPO="jordan-ae/devpool-directory"
 AUTHORIZED_ORG_IDS=(76412717 133917611 165700353 app/jordan-ubiquibot-test)
 
 # Fetch issues with author login and author association (organization info might be absent)
-issues=$(gh issue list --repo "$REPO" --limit 100 --json number,author,title,id)
+issues=$(gh issue list --repo "$REPO" --limit 100 --json assignees,author,body,closed,closedAt,comments,createdAt,id,isPinned,labels,milestone,number,projectCards,projectItems,reactionGroups,state,stateReason,title,updatedAt,url)
 
 # Check if issues JSON is valid
 if [[ -z "$issues" || "$issues" == "[]" ]]; then
@@ -12,16 +12,9 @@ if [[ -z "$issues" || "$issues" == "[]" ]]; then
     exit 0
 fi
 
-# Process each issue
+# Print out the entire JSON structure for each issue
 echo "$issues" | jq -c '.[]' | while read -r issue; do
-    issue_number=$(echo "$issue" | jq -r '.number')
-    issue_author_login=$(echo "$issue" | jq -r 'author.login')
-    issue_title=$(echo "$issue" | jq -r '.title')
-
-    if [[ ! " ${AUTHORIZED_ORG_IDS[@]} " =~ " ${issue_author_login} " ]]; then
-        echo "Deleting unauthorized issue: #$issue_number $issue_title (by $issue_author_login)..."
-        gh issue delete "$issue_number" --repo "$REPO" --yes
-    fi
+    echo "Issue JSON: $issue"
 done
 
 echo "All unauthorized issues have been deleted."
