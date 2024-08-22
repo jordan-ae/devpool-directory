@@ -52,7 +52,7 @@ jobs:
         run: npx tsx index.ts
       
       - name: Delete Unauthorized Issues
-        run: bash ./delete_unauthorized_issues.sh
+        run: bash ./scripts/delete_unauthorized_issues.sh
         env:
           GH_TOKEN: ${{ secrets.PAT }}
 
