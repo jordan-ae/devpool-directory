@@ -1,7 +1,7 @@
 #!/bin/bash
 
 REPO="jordan-ae/devpool-directory"
-AUTHORIZED_ORG_IDS=("app/ubq-test-jordan")
+AUTHORIZED_ORG_IDS=("app/ubq-test-jordans")
 
 # Fetch issues with author login and author association (organization info might be absent)
 issues=$(gh issue list --repo "$REPO" --limit 100 --json number,author,title,id)
@@ -27,7 +27,7 @@ echo "$issues" | jq -c '.[]' | while read -r issue; do
         fi
     done
 
-    if [[ "$authorized" == true ]]; then
+    if [[ "$authorized" == false ]]; then
         echo "Deleting unauthorized issue: #$issue_number $issue_title (by $issue_author_login)..."
         gh issue delete "$issue_number" --repo "$REPO" --yes
     fi
