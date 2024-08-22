@@ -1,7 +1,7 @@
 #!/bin/bash
 
 REPO="jordan-ae/devpool-directory"
-AUTHORIZED_ORG_IDS=(app/ubq-test-jordan)
+AUTHORIZED_ORG_IDS=(app/ubq-test-jordans)
 
 # Fetch issues with author login and author association (organization info might be absent)
 issues=$(gh issue list --repo "$REPO" --limit 100 --json number,author,title,id)
