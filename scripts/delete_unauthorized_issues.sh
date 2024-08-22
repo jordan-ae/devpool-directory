@@ -19,15 +19,15 @@ echo "$issues" | jq -c '.[]' | while read -r issue; do
     issue_title=$(echo "$issue" | jq -r '.title')
 
     # Check for exact match in the AUTHORIZED_ORG_IDS array
-    authorized=false
+    authorized=true
     for org_id in "${AUTHORIZED_ORG_IDS[@]}"; do
-        if [[ "$issue_author_login" == "$org_id" ]]; then
-            authorized=true
+        if [[ ! "$issue_author_login" == "$org_id" ]]; then
+            authorized=false
             break
         fi
     done
 
-    if [[ "$authorized" == false ]]; then
+    if [[ "$authorized" == true ]]; then
         echo "Deleting unauthorized issue: #$issue_number $issue_title (by $issue_author_login)..."
         gh issue delete "$issue_number" --repo "$REPO" --yes
     fi
