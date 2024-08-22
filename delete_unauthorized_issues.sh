@@ -5,7 +5,7 @@ REPO="jordan-ae/devpool-directory"
 AUTHORIZED_ORG_IDS=(76412717 133917611 165700353)
 
 # Fetch all issues in JSON format
-issues=$(gh issue list --repo "$REPO" --limit 1000 --json number,author,title,author_association)
+issues=$(gh issue list --repo "$REPO" --limit 1000 --json number,author,title)
 
 # Loop through each issue and delete unauthorized ones
 for issue in $(echo "$issues" | jq -c '.[]'); do
