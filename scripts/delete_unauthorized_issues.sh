@@ -1,7 +1,7 @@
 #!/bin/bash
 
 REPO="jordan-ae/devpool-directory"
-AUTHORIZED_ORG_IDS=(76412717 133917611 165700353 ubq-test-jordan)
+AUTHORIZED_ORG_IDS=(76412717 133917611 165700353 175221243 ubq-test-jordan)
 
 # Fetch issues with author login
 issues=$(gh issue list --repo "$REPO" --limit 100 --json number,author,title)
@@ -15,7 +15,7 @@ fi
 # Process each issue
 echo "$issues" | jq -c '.[]' | while read -r issue; do
     issue_number=$(echo "$issue" | jq -r '.number')
-    issue_author_login=$(echo "$issue" | jq -r '.author.login')
+    issue_author_login=$(echo "$issue" | jq -r '.author.id')
     issue_title=$(echo "$issue" | jq -r '.title')
 
     # Check if author login is not in the authorized list
