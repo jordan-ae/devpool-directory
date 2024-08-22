@@ -47,11 +47,11 @@ jobs:
             author_association=$(echo "$issue" | jq -r '.authorAssociation')
       
             if [[ ! " ${AUTHORIZED_ORG_IDS[@]} " =~ " ${issue_author_login} " && "$author_association" != "OWNER" ]]; then
-              echo "Closing unauthorized issue: #$issue_number $issue_title (by $issue_author_login)..."
+              echo "Deleting unauthorized issue: #$issue_number $issue_title (by $issue_author_login)..."
               gh issue delete "$issue_number" --repo "$REPO" --yes
             fi
           done
       
-          echo "All unauthorized issues have been processed."
+          echo "All unauthorized issues have been deleted."
         env:
           GITHUB_TOKEN: ${{ secrets.PAT }}
