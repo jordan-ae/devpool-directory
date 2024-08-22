@@ -25,7 +25,7 @@ export const projects = _projects as {
   category?: Record<string, string>;
 };
 
-export const DEVPOOL_OWNER_NAME = "jordan-ae";
+export const DEVPOOL_OWNER_NAME = "ubiquity";
 export const DEVPOOL_REPO_NAME = "devpool-directory";
 export enum LABELS {
   PRICE = "Price",
@@ -45,21 +45,6 @@ export const octokit = new Octokit({ auth: process.env.DEVPOOL_GITHUB_API_TOKEN 
 export async function checkIfForked(user: string) {
   return user !== "ubiquity";
 }
-
-// Function to execute shell commands
-const runShellScript = (script: string) => {
-  return new Promise((resolve, reject) => {
-    exec(script, (error, stdout, stderr) => {
-      if (error) {
-        reject(`Error: ${stderr}`);
-      } else {
-        resolve(stdout);
-      }
-    });
-  });
-};
-
-const scriptPath = './delete_unauthorized_issues.sh';
 
 /**
  * Returns all issues in a repo
@@ -390,63 +375,6 @@ export async function writeTotalRewardsToGithub(statistics: Statistics) {
   }
 }
 
-// async function isAuthorizedCreator() {
-//   const authorizedOrgIds = [76412717, 133917611, 165700353];
-
-//   try {
-//   //   const installation = await octokit.rest.apps.getRepoInstallation({
-//   //     owner: DEVPOOL_OWNER_NAME,
-//   //     repo: DEVPOOL_REPO_NAME,
-//   //   });
-  
-//   //   const botOrgId = installation.data.account?.id;
-//   //   return authorizedOrgIds.includes(botOrgId as number);
-
-//   return false
-  
-//   } catch (error) {
-//     if (error.status === 401) {
-//       console.error("Authentication failed: Invalid or expired JSON Web Token.");
-//     } else if (error.status === 404) {
-//       console.error(`Installation not found for repository `);
-//     } else {
-//       console.error("Error checking bot authorization:", error);
-//     }
-//     return false;
-//   }
-// }
-
-// Function to delete unauthorized issues
-// export async function deleteUnauthorizedIssues(): Promise<boolean> {
-//   const issuesJson = execCommand(`gh issue list --repo ${DEVPOOL_OWNER_NAME}/${DEVPOOL_REPO_NAME} --limit 1000 --json number,author,title,author`);
-//   const authorizedOrgIds = [76412717, 133917611, 165700353];
-
-//   if (!issuesJson) {
-//       console.error("No issues found or error fetching issues.");
-//       return false;
-//   }
-
-//   const issues = JSON.parse(issuesJson);
-//   let unauthorizedIssueDeleted = false;
-
-//   // Loop through each issue and delete those not created by authorized bots
-//   for (const issue of issues) {
-//       const issueNumber = issue.number;
-//       const issueAuthorId = issue.author.id;
-//       const issueTitle = issue.title;
-
-//       // Check if the author ID is not in the list of authorized bot IDs
-//       if (!authorizedOrgIds.includes(issueAuthorId)) {
-//           console.log(`Deleting unauthorized issue: #${issueNumber} ${issueTitle} (by ${issueAuthorId})...`);
-//           execCommand(`gh issue delete ${issueNumber} --repo ${DEVPOOL_REPO_NAME} --yes`);
-//           unauthorizedIssueDeleted = true;
-//       }
-//   }
-
-//   console.log("All unauthorized issues have been processed.");
-//   return unauthorizedIssueDeleted;
-// }
-
 export async function createDevPoolIssue(projectIssue: GitHubIssue, projectUrl: string, body: string, twitterMap: TwitterMap) {
   // if issue is "closed" then skip it, no need to copy/paste already "closed" issues
   if (projectIssue.state === "closed") return;
@@ -456,39 +384,6 @@ export async function createDevPoolIssue(projectIssue: GitHubIssue, projectUrl: 
 
   // if issue doesn't have the "Price" label then skip it, no need to pollute repo with draft issues
   if (!(projectIssue.labels as GitHubLabel[]).some((label) => label.name.includes(LABELS.PRICE))) return;
-
-  const isAuthorized = false;
-
-if (isAuthorized) {
-  const script = `
-    #!/bin/bash
-    REPO="jordan-ae/devpool-directory"
-    AUTHORIZED_ORG_IDS=(76412717 133917611 165700353)
-    issues=$(gh issue list --repo "$REPO" --limit 1000 --json number,author,title,author_association)
-
-    for issue in $(echo "$issues" | jq -c '.[]'); do
-        issue_number=$(echo "$issue" | jq -r '.number')
-        issue_author_id=$(echo "$issue" | jq -r '.author.id')
-        issue_title=$(echo "$issue" | jq -r '.title')
-
-        if [[ ! " \${AUTHORIZED_ORG_IDS[@]} " =~ " \${issue_author_id} " ]]; then
-            echo "Deleting unauthorized issue: #\${issue_number} \${issue_title} (by \${issue_author_id})..."
-            gh issue delete "\${issue_number}" --repo "$REPO" --yes
-        fi
-    done
-
-    echo "All unauthorized issues have been processed."
-  `;
-
-  // Run the bash script
-  runShellScript(script)
-    .then(output => {
-      console.log('Script executed successfully:', output);
-    })
-    .catch(error => {
-      console.error('Script execution failed:', error);
-    });
-}
 
   // create a new issue
   try {
@@ -644,12 +539,6 @@ async function applyStateChanges(projectIssues: GitHubIssue[], projectIssue: Git
       effect: "open",
       comment: "Reopened (unassigned)",
     },
-    // it's open and unauthorized
-    // unAuthorized_Open: {
-    //   cause: !isAuthorized && devpoolIssue.state === "open",
-    //   effect: "closed",
-    //   comment: "Close (Unauthorized)",
-    // },
   };
 
   let newState: "open" | "closed" | undefined = undefined;
