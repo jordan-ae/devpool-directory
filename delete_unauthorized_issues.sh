@@ -1,32 +1,28 @@
 #!/bin/bash
 
-# Set the repository and authorized organization IDs
 REPO="jordan-ae/devpool-directory"
 AUTHORIZED_ORG_IDS=(76412717 133917611 165700353)
 
-# Fetch all issues in JSON format
-issues=$(gh issue list --repo "$REPO" --limit 1000 --json number,author,title)
+# Fetch issues with author login and author association (organization info might be absent)
+issues=$(gh issue list --repo "$REPO" --limit 100 --json number,author,title)
 
-# Check if the issues data was retrieved successfully
-if [ -z "$issues" ]; then
-    echo "Failed to retrieve issues or no issues found."
-    exit 1
+# Check if issues JSON is valid
+if [[ -z "$issues" || "$issues" == "[]" ]]; then
+    echo "No issues found or invalid JSON."
+    exit 0
 fi
 
-# Loop through each issue and delete unauthorized ones
-echo "$issues" | jq -c '.[]' | while IFS= read -r issue; do
-    issue_number=$(echo "$issue" | jq -r '.number // empty')
-    issue_author_id=$(echo "$issue" | jq -r '.author.id // empty')
-    issue_title=$(echo "$issue" | jq -r '.title // empty')
+# Process each issue
+echo "$issues" | jq -c '.[]' | while read -r issue; do
+    issue_number=$(echo "$issue" | jq -r '.number')
+    issue_author_login=$(echo "$issue" | jq -r '.author.login')
+    issue_title=$(echo "$issue" | jq -r '.title')
+    author_association=$(echo "$issue" | jq -r '.authorAssociation')
 
-    if [ -n "$issue_number" ] && [ -n "$issue_author_id" ]; then
-        if [[ ! " ${AUTHORIZED_ORG_IDS[@]} " =~ " ${issue_author_id} " ]]; then
-            echo "Deleting unauthorized issue: #$issue_number $issue_title (by $issue_author_id)..."
-            gh issue delete "$issue_number" --repo "$REPO" --yes
-        fi
-    else
-        echo "Skipping issue due to missing data."
+    if [[ ! " ${AUTHORIZED_ORG_IDS[@]} " =~ " ${issue_author_login} " && "$author_association" != "OWNER" ]]; then
+        echo "Deleting unauthorized issue: #$issue_number $issue_title (by $issue_author_login)..."
+        gh issue delete "$issue_number" --repo "$REPO" --yes
     fi
 done
 
-echo "All unauthorized issues have been processed."
+echo "All unauthorized issues have been deleted."
