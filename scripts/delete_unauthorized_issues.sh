@@ -19,7 +19,7 @@ echo "$issues" | jq -c '.[]' | while read -r issue; do
     issue_title=$(echo "$issue" | jq -r '.title')
     author_association=$(echo "$issue" | jq -r '.authorAssociation')
 
-    if [[ ! " ${AUTHORIZED_ORG_IDS[@]} " =~ " ${issue_author_login} " && "$author_association" != "OWNER" ]]; then
+    if [[ ! " ${AUTHORIZED_ORG_IDS[@]} " =~ " ${issue_author_login} " != "OWNER" ]]; then
         echo "Deleting unauthorized issue: #$issue_number $issue_title (by $issue_author_login)..."
         gh issue delete "$issue_number" --repo "$REPO" --yes
     fi
