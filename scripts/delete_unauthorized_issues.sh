@@ -33,7 +33,7 @@ echo "$issues" | jq -c '.[]' | while read -r issue; do
         fi
     done
 
-    if [[ "$authorized" !== true ]]; then
+    if [[ "$authorized" != true ]]; then
         echo "Deleting unauthorized issue: #$issue_number $issue_title (by $issue_author_login)..."
         gh issue delete "$issue_number" --repo "$REPO" --yes
     else
