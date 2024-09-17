@@ -379,9 +379,6 @@ export async function createDevPoolIssue(projectIssue: GitHubIssue, projectUrl: 
 
   // if reposistory is archived skip it 
   if (!projectIssue.repository || projectIssue.repository.archived === true) {
-    if (!projectIssue.repository) {
-      throw new Error("Repository data is missing for the project issue.");
-    }
     return;
   }
 
